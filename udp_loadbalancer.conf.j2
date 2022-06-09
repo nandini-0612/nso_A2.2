@@ -10,14 +10,14 @@ events {
   
  stream {
      
-     upstream udpservers{
-        {% for host in groups['webservers'] %}
-     server {{ hostvars[host]["ansible_default_ipv4"]["address"] }}:161;
+     upstream udp_servers{
+        {% for dev_servers in groups['webservers'] %}
+     server {{ hostvars[dev_servers]["ansible_default_ipv4"]["address"] }}:161;
         {% endfor %} 
 	}
  server {
     listen 1611 udp;
-    proxy_pass udpservers;
+    proxy_pass udp_servers;
    }
 
 }
