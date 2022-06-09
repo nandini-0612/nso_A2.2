@@ -1,4 +1,4 @@
-Host bastionNSO
+Host bastionET2598
 	HostName 77.81.189.77
 	ForwardAgent yes
 	ControlMaster auto 
@@ -7,19 +7,19 @@ Host bastionNSO
 	
 Host HAproxy
 	HostName 77.81.189.183
-	ProxyCommand ssh -W %h:%p bastionNSO
+	ProxyCommand ssh -W %h:%p bastionET2598
 
 Host devA
 	HostName 10.1.0.34
-	ProxyCommand ssh -W %h:%p bastionNSO	
+	ProxyCommand ssh -W %h:%p bastionET2598	
 	
 Host devB
 	HostName 10.1.0.138
-	ProxyCommand ssh -W %h:%p bastionNSO
+	ProxyCommand ssh -W %h:%p bastionET2598
 	
 Host devC
 	HostName 10.1.0.102
-	ProxyCommand ssh -W %h:%p bastionNSO
+	ProxyCommand ssh -W %h:%p bastionET2598
 
 Host *
 	user ubuntu
