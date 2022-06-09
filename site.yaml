@@ -1,0 +1,178 @@
+---
+- hosts: webservers
+  gather_facts: true
+  become: true
+  tasks:
+    - name: apt update
+      apt:
+        update_cache: yes
+
+    - name: install pip3
+      apt:
+        name: python3-pip
+        state: latest
+        update_cache: true
+
+    - name: installing flask
+      pip:
+        executable: pip3
+        name: flask
+        state: latest
+
+    - name: install nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: start nginx
+      service:
+        name: nginx
+        state: started
+      become: true
+
+    - name: copy the nginx config file and restart nginx
+      copy: src=/$PWD/nginx.conf dest=/etc/nginx/sites-available/default
+
+    - name: enable nginx
+      service:
+        name: nginx
+        state: restarted
+
+    - name: install snmp
+      apt:
+        name: snmp
+        state: latest
+    - name: install snmp-mibs-downloader
+      apt:
+        name: snmp-mibs-downloader
+        state: latest
+
+    - name: install snmpd
+      apt:
+        name: snmpd
+        state: latest
+
+    - name: configure snmpd
+      copy: src=/$PWD/snmpd.conf dest=/etc/snmp/snmpd.conf
+
+    - name: start snmp
+      service:
+        name: snmpd
+        state: restarted 
+      become: true
+
+    - name: Install Docker
+      shell: |
+           cd ~ 
+           curl -fsSL https://get.docker.com -o get-docker.sh  
+           sudo sh get-docker.sh
+
+    - name: pip3 install docker
+      pip:
+        executable: pip3
+        name: docker
+        state: latest
+
+    - name: create a directory 
+      file:
+        path: /home/flask_app
+        state: directory
+
+    - name: copy Dockerfile into the directory
+      copy: src=/$PWD/Dockerfile dest=/home/flask_app
+
+    - name: Change file ownership, group and permissions
+      ansible.builtin.file:
+        path: /home/flask_app/Dockerfile
+        owner: root
+        group: root
+        mode: '0777'
+
+    - name: copy few files in the created directory
+      copy: src=/$PWD/{{ item }} dest=/home/flask_app
+      with_items:
+        - application2.ini
+        - application2.py
+        - nginx.conf
+        - req.txt 
+        - start.sh
+
+    - name: Build docker image
+      docker_image:
+        name: flask
+        build:
+          pull: true
+          path: /home/flask_app
+        state: present
+        source: build
+
+    - name: launch docker container
+      docker_container:
+        name: flask
+        image: flask
+        state: started
+        ports:
+          - 8008:4000
+      register: docker_info
+
+    - name: install req.txt
+      pip:
+        requirements: /home/flask_app/req.txt
+
+    - name: run flask app
+      shell: |
+            cd flask_app
+            nohup python3 application2.py >/dev/null 2>&1 &
+
+# haproxy configuration
+- hosts: all
+  gather_facts: true
+- hosts: HAproxy
+  become: true
+  
+  tasks:
+
+    - name: apt update
+      apt:
+        update_cache: yes
+    
+    - name: Install haproxy
+      apt:
+        name: haproxy
+        state: present
+
+    - name: configure haproxy
+      template:
+        src: /$PWD/haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+    
+    - name: restart haproxy
+      service:
+        name: haproxy
+        state: restarted
+
+    - name: install nginx
+      apt:
+        name: nginx
+        state: latest
+
+    - name: configure nginx
+      template:
+        src: /$PWD/udp_loadbalancer.conf.j2
+        dest: /etc/nginx/nginx.conf
+
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted
+
+    - name: install snmp
+      apt: 
+        name: snmp 
+        state: latest
+    
+
+
+  
+ 
+
