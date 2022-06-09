@@ -7,55 +7,56 @@
       apt:
         update_cache: yes
 
-    - name: install pip3
+    - name: Installing pip3
       apt:
         name: python3-pip
         state: latest
         update_cache: true
 
-    - name: installing flask
+    - name: Installing flask
       pip:
         executable: pip3
         name: flask
         state: latest
 
-    - name: install nginx
+    - name: Installing Nginx
       apt:
         name: nginx
         state: latest
 
-    - name: start nginx
+    - name: Start Nginx
       service:
         name: nginx
         state: started
       become: true
 
-    - name: copy the nginx config file and restart nginx
+    - name: copy the nginx config file 
       copy: src=/$PWD/nginx.conf dest=/etc/nginx/sites-available/default
 
-    - name: enable nginx
+    - name: restart Nginx
       service:
         name: nginx
         state: restarted
 
-    - name: install snmp
+    - name: Installing SNMP
       apt:
         name: snmp
         state: latest
-    - name: install snmp-mibs-downloader
+
+    - name: Install snmp-mibs-downloader
       apt:
         name: snmp-mibs-downloader
         state: latest
 
-    - name: install snmpd
+    - name: Install snmpd
       apt:
         name: snmpd
         state: latest
 
-    - name: configure snmpd
+    - name: Copy the snmpd config file
       copy: src=/$PWD/snmpd.conf dest=/etc/snmp/snmpd.conf
 
-    - name: start snmp
+    - name: Restart snmp
       service:
         name: snmpd
         state: restarted 
@@ -78,7 +79,7 @@
         path: /home/flask_app
         state: directory
 
-    - name: copy Dockerfile into the directory
+    - name: copy Dockerfile into the created directory
       copy: src=/$PWD/Dockerfile dest=/home/flask_app
 
     - name: Change file ownership, group and permissions
@@ -136,41 +137,55 @@
       apt:
         update_cache: yes
     
-    - name: Install haproxy
+    - name: Installing HAPROXY
       apt:
         name: haproxy
         state: present
 
-    - name: configure haproxy
+    - name: Configure haproxy
       template:
         src: /$PWD/haproxy.cfg.j2
         dest: /etc/haproxy/haproxy.cfg
     
-    - name: restart haproxy
+    - name: Restart haproxy
       service:
         name: haproxy
         state: restarted
 
-    - name: install nginx
+    - name: Installing Nginx
       apt:
         name: nginx
         state: latest
 
-    - name: configure nginx
+    - name: Configure Nginx
       template:
         src: /$PWD/udp_loadbalancer.conf.j2
         dest: /etc/nginx/nginx.conf
 
-    - name: restart nginx
+    - name: Restart Nginx
       service:
         name: nginx
         state: restarted
 
-    - name: install snmp
+    - name: Installing SNMP
       apt: 
         name: snmp 
         state: latest
-    
+
+    - name: snmp request 1
+      shell:  "snmpwalk -t 1 -r 1 -v2c -c public localhost:1611 iso.3.6.1.2.1.1.1.0"
+      register: "output"
+    - debug: var=output.stdout_lines
+
+    - name: snmp request 2
+      shell:  "snmpwalk -t 1 -r 1 -v2c -c public localhost:1611 iso.3.6.1.2.1.1.1.0"
+      register: "output"
+    - debug: var=output.stdout_lines
+
+    - name: snmp request 3
+      shell:  "snmpwalk -t 1 -r 1 -v2c -c public localhost:1611 iso.3.6.1.2.1.1.1.0"
+      register: "output"
+    - debug: var=output.stdout_lines    
 
 
   
