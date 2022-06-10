@@ -1,17 +1,18 @@
 ---
 - hosts: webservers
-  gather_facts: true
-  become: true
+  become: yes
+  become_method: sudo
+  gather_facts: yes
   tasks:
     - name: apt update
       apt:
         update_cache: yes
-
+   
     - name: Installing pip3
       apt:
-        name: python3-pip
-        state: latest
-        update_cache: true
+       name: python3-pip
+       state: latest
+       update_cache: true
 
     - name: Installing flask
       pip:
@@ -19,24 +20,9 @@
         name: flask
         state: latest
 
-    - name: Installing Nginx
+    - name: Installing Gunicorn
       apt:
-        name: nginx
-        state: latest
-
-    - name: Start Nginx
-      service:
-        name: nginx
-        state: started
-      become: true
-
-    - name: copy the nginx config file 
-      copy: src=/$PWD/nginx.conf dest=/etc/nginx/sites-available/default
-
-    - name: restart Nginx
-      service:
-        name: nginx
-        state: restarted
+        name: gunicorn
 
     - name: Installing SNMP
       apt:
@@ -48,82 +34,31 @@
         name: snmp-mibs-downloader
         state: latest
 
-    - name: Install snmpd
+    - name: Installing snmpd
       apt:
         name: snmpd
         state: latest
-
-    - name: Copy the snmpd config file
-      copy: src=/$PWD/snmpd.conf dest=/etc/snmp/snmpd.conf
-
-    - name: Restart snmp
+    
+    - name: Copy the config file of snmpd 
+      template:
+         src: /$PWD/snmpd.conf
+         dest: /etc/snmp/snmpd.conf
+    
+    - name: Restarting snmpd
       service:
-        name: snmpd
-        state: restarted 
-      become: true
+         name: snmpd
+         state: restarted
+         enabled: yes
 
-    - name: Install Docker
-      shell: |
-           cd ~ 
-           curl -fsSL https://get.docker.com -o get-docker.sh  
-           sudo sh get-docker.sh
+    - name: Copy Application2.py
+      copy:
+        src: /$PWD/application2.py
+        dest: /home/ubuntu/application2.py
+        owner: ubuntu
+        mode: '0644'
+    - name: "Running Flask app"
+      shell: gunicorn -w 2 -D -b 0.0.0.0:8080 application2:app
 
-    - name: pip3 install docker
-      pip:
-        executable: pip3
-        name: docker
-        state: latest
-
-    - name: create a directory 
-      file:
-        path: /home/flask_app
-        state: directory
-
-    - name: copy Dockerfile into the created directory
-      copy: src=/$PWD/Dockerfile dest=/home/flask_app
-
-    - name: Change file ownership, group and permissions
-      ansible.builtin.file:
-        path: /home/flask_app/Dockerfile
-        owner: root
-        group: root
-        mode: '0777'
-
-    - name: copy few files in the created directory
-      copy: src=/$PWD/{{ item }} dest=/home/flask_app
-      with_items:
-        - application2.ini
-        - application2.py
-        - nginx.conf
-        - req.txt 
-        - start.sh
-
-    - name: Build docker image
-      docker_image:
-        name: flask
-        build:
-          pull: true
-          path: /home/flask_app
-        state: present
-        source: build
-
-    - name: launch docker container
-      docker_container:
-        name: flask
-        image: flask
-        state: started
-        ports:
-          - 8008:4000
-      register: docker_info
-
-    - name: install req.txt
-      pip:
-        requirements: /home/flask_app/req.txt
-
-    - name: run flask app
-      shell: |
-            cd flask_app
-            nohup python3 application2.py >/dev/null 2>&1 &
 
 # haproxy configuration
 - hosts: all
@@ -189,5 +124,3 @@
 
 
   
- 
-
