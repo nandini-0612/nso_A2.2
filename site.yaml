@@ -56,7 +56,8 @@
         dest: /home/ubuntu/application2.py
         owner: ubuntu
         mode: '0644'
-    - name: "Running Flask app"
+    
+    - name: Running Flask application
       shell: gunicorn -w 2 -D -b 0.0.0.0:8080 application2:app
 
 
