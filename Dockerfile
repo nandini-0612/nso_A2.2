@@ -4,7 +4,7 @@ RUN apt-get update && apt-get install -y nginx
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
-COPY req.txt 
+COPY req.txt .
 RUN pip install -r req.txt
 
 COPY . .
